@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"messageBord/go/infra"
@@ -23,11 +24,11 @@ func main() {
 	}
 	defer db.Close()
 
-	// ctx := context.Background()
+	ctx := context.Background()
 
 	var messageRepo repository.MessageBoardRepository
-	// messageRepo = &infra.DbMessageBoardRepository{DB: db, Ctx: ctx} // DB
-	messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
+	messageRepo = &infra.DbMessageBoardRepository{DB: db, Ctx: ctx} // DB
+	// messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
 
 	if len(os.Args) > 1 {
 		///////////////////////////////////////////////
