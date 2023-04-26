@@ -16,16 +16,18 @@ import (
 func main() {
 	///////////////////////////////////////////////
 	// main()の内容
-	db, err := sqlx.Open("mysql", "root:myrootpassword@tcp(127.0.0.1:3306)/test_1")
+	db, err := sqlx.Open("mysql", "root:myrootpassword@tcp(127.0.0.1:3306)/test_1?parseTime=true&loc=Asia%2FTokyo")
 	if err != nil {
 		log.Fatalln("[ERROR]sqlx.Open: ", err)
 		panic(err.Error())
 	}
 	defer db.Close()
 
+	// ctx := context.Background()
+
 	var messageRepo repository.MessageBoardRepository
-	messageRepo = &infra.DbMessageBoardRepository{DB: db} // DB
-	// messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
+	// messageRepo = &infra.DbMessageBoardRepository{DB: db, Ctx: ctx} // DB
+	messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
 
 	if len(os.Args) > 1 {
 		///////////////////////////////////////////////
@@ -69,7 +71,7 @@ func useRepositoryRegisterMessageInfo(messageRepo repository.MessageBoardReposit
 	}
 }
 
-func useRepositoryGetMessageList(messageRepo repository.MessageBoardRepository) ([]model.MessageInfo, error) {
+func useRepositoryGetMessageList(messageRepo repository.MessageBoardRepository) ([]*model.MessageInfo, error) {
 	messageList, repositoryErr := messageRepo.GetMessageList()
 	if repositoryErr != nil {
 		return nil, repositoryErr

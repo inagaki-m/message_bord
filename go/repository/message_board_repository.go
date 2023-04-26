@@ -6,5 +6,5 @@ import (
 
 type MessageBoardRepository interface {
 	RegisterMessageInfo(messageInfo *model.MessageInfo) error
-	GetMessageList() ([]model.MessageInfo, error)
+	GetMessageList() ([]*model.MessageInfo, error)
 }

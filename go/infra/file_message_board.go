@@ -38,8 +38,8 @@ func (m *FileMessageBoardRepository) RegisterMessageInfo(messageInfo *model.Mess
 	return nil
 }
 
-func (m *FileMessageBoardRepository) GetMessageList() ([]model.MessageInfo, error) {
-	messageInfo := make([]model.MessageInfo, 0)
+func (m *FileMessageBoardRepository) GetMessageList() ([]*model.MessageInfo, error) {
+	messageInfo := make([]*model.MessageInfo, 0)
 	bytes, err := ioutil.ReadFile(m.FilePath)
 	if err != nil {
 		fmt.Println("ファイル内容取得 失敗", err)
