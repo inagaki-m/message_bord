@@ -1,0 +1,7 @@
+data
+auto.conf
+binlog.index
+docker-compose.yml
+go.mod
+go.sum
+.DS_Store
