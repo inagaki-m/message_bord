@@ -27,13 +27,13 @@ func main() {
 	ctx := context.Background()
 
 	var messageRepo repository.MessageBoardRepository
-	messageRepo = &infra.DbMessageBoardRepository{DB: db, Ctx: ctx} // DB
-	// messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
+	// messageRepo = &infra.DbMessageBoardRepository{DB: db} // DB
+	messageRepo = &infra.FileMessageBoardRepository{FilePath: "./messageList.json"} // File
 
 	if len(os.Args) > 1 {
 		///////////////////////////////////////////////
 		// 以下usecaseの内容
-		messageList, err := useRepositoryGetMessageList(messageRepo)
+		messageList, err := useRepositoryGetMessageList(messageRepo, ctx)
 		if err != nil {
 			log.Fatalln("[ERROR]sqlx.Open: ", err)
 		}
@@ -58,22 +58,22 @@ func main() {
 			Name:    userName,
 			Message: message,
 		}
-		useRepositoryRegisterMessageInfo(messageRepo, messageInfo)
+		useRepositoryRegisterMessageInfo(messageRepo, messageInfo, ctx)
 	}
 }
 
 // [memo]
 // messageRepoをrepository.MessageBoardRepositoryにすることによりinfraのどのメソッド使っても良いようにする
 // *infra.DbMessageBoardRepositoryにした場合、使いたいinfraが変わった場合、呼び出し元も同じにする必要がある
-func useRepositoryRegisterMessageInfo(messageRepo repository.MessageBoardRepository, messageInfo *model.MessageInfo) {
-	repositoryErr := messageRepo.RegisterMessageInfo(messageInfo)
+func useRepositoryRegisterMessageInfo(messageRepo repository.MessageBoardRepository, messageInfo *model.MessageInfo, ctx context.Context) {
+	repositoryErr := messageRepo.RegisterMessageInfo(messageInfo, ctx)
 	if repositoryErr != nil {
 		return
 	}
 }
 
-func useRepositoryGetMessageList(messageRepo repository.MessageBoardRepository) ([]*model.MessageInfo, error) {
-	messageList, repositoryErr := messageRepo.GetMessageList()
+func useRepositoryGetMessageList(messageRepo repository.MessageBoardRepository, ctx context.Context) ([]*model.MessageInfo, error) {
+	messageList, repositoryErr := messageRepo.GetMessageList(ctx)
 	if repositoryErr != nil {
 		return nil, repositoryErr
 	}

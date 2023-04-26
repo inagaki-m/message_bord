@@ -13,12 +13,11 @@ import (
 var _ repository.MessageBoardRepository = new(DbMessageBoardRepository)
 
 type DbMessageBoardRepository struct {
-	DB  *sqlx.DB
-	Ctx context.Context
+	DB *sqlx.DB
 }
 
-func (m *DbMessageBoardRepository) RegisterMessageInfo(messageInfo *model.MessageInfo) error {
-	tx, err := m.DB.BeginTxx(m.Ctx, nil)
+func (m *DbMessageBoardRepository) RegisterMessageInfo(messageInfo *model.MessageInfo, ctx context.Context) error {
+	tx, err := m.DB.BeginTxx(ctx, nil)
 	if err != nil {
 		log.Fatalln("[ERROR] BeginTxx: ", err)
 		return err
@@ -35,7 +34,7 @@ func (m *DbMessageBoardRepository) RegisterMessageInfo(messageInfo *model.Messag
 			:message,
 			NOW()
 		)`
-	if _, err = tx.NamedExecContext(m.Ctx, query, messageInfo); err != nil {
+	if _, err = tx.NamedExecContext(ctx, query, messageInfo); err != nil {
 		log.Fatalln("[ERROR] NamedExecContext: ", err)
 		tx.Rollback()
 		return err
@@ -44,10 +43,10 @@ func (m *DbMessageBoardRepository) RegisterMessageInfo(messageInfo *model.Messag
 	return nil
 }
 
-func (m *DbMessageBoardRepository) GetMessageList() ([]*model.MessageInfo, error) {
-	rows, err := m.DB.Queryx("SELECT name, message, createTime FROM messages")
+func (m *DbMessageBoardRepository) GetMessageList(ctx context.Context) ([]*model.MessageInfo, error) {
+	rows, err := m.DB.QueryxContext(ctx, "SELECT name, message, createTime FROM messages")
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -62,10 +61,15 @@ func (m *DbMessageBoardRepository) GetMessageList() ([]*model.MessageInfo, error
 			&messageInfo.CreateTime,
 		)
 		if err != nil {
-			log.Fatalln("[ERROR] rows.Scan: ", err)
-			panic(err.Error())
+			return nil, err
 		}
 		messageInfoList = append(messageInfoList, &messageInfo)
 	}
-	return messageInfoList, nil
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		return messageInfoList, nil
+	}
 }

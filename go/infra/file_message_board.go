@@ -1,6 +1,7 @@
 package infra
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,7 @@ type FileMessageBoardRepository struct {
 	FilePath string
 }
 
-func (m *FileMessageBoardRepository) RegisterMessageInfo(messageInfo *model.MessageInfo) error {
+func (m *FileMessageBoardRepository) RegisterMessageInfo(messageInfo *model.MessageInfo, ctx context.Context) error {
 	inputData, err := GetInputMessageList(m.FilePath)
 	if err != nil {
 		return err
@@ -32,25 +33,34 @@ func (m *FileMessageBoardRepository) RegisterMessageInfo(messageInfo *model.Mess
 	}
 
 	if err := ioutil.WriteFile(m.FilePath, jsonData, os.ModePerm); err != nil {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		fmt.Println("ファイル書き込み失敗")
 		return err
 	}
 	return nil
 }
 
-func (m *FileMessageBoardRepository) GetMessageList() ([]*model.MessageInfo, error) {
+func (m *FileMessageBoardRepository) GetMessageList(ctx context.Context) ([]*model.MessageInfo, error) {
 	messageInfo := make([]*model.MessageInfo, 0)
 	bytes, err := ioutil.ReadFile(m.FilePath)
 	if err != nil {
 		fmt.Println("ファイル内容取得 失敗", err)
 		return nil, err
 	}
-
-	if err := json.Unmarshal(bytes, &messageInfo); err != nil {
-		fmt.Println("ファイル構造体に変換 失敗", err)
-		return nil, err
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+		if err := json.Unmarshal(bytes, &messageInfo); err != nil {
+			fmt.Println("ファイル構造体に変換 失敗", err)
+			return nil, err
+		}
+		return messageInfo, nil
 	}
-	return messageInfo, nil
 }
 
 func GetInputMessageList(filePath string) ([]model.MessageInfo, error) {
